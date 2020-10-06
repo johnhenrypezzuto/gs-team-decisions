@@ -51,22 +51,42 @@ topic_df <- tibble(question = c(3, 8, 5, 2, 4, 1, 7, 6),
 
 
 convo_clean <- 
-convo %>%
-  select(unique_group, subject, chatentry, secondsintochat, question) %>% 
-  drop_na(chatentry, subject) %>% 
-  group_by(unique_group) %>% 
-  left_join(gender) %>% # import names
-  mutate(subject = dense_rank(subject), # renumber Member 1:3
-         subject = glue("<b>Member {subject}: </b>"),
-         name = glue("<b>{name}: </b>"),
-         chatentry = str_c(chatentry, "<br>")) %>%  # bold the subject thing
-  arrange(unique_group, secondsintochat) %>% 
-  left_join(topic_df) # import topics
+  convo %>%
+    select(unique_group, subject, chatentry, genderknown, secondsintochat, question) %>% 
+    drop_na(chatentry, subject) %>% 
+    group_by(unique_group) %>% 
+    left_join(gender) %>% # import names
+    mutate(subject = dense_rank(subject)) %>%  # renumber Member 1:3
+    left_join(topic_df) # import topics
   
+
+convo_prep <-
+  convo_clean %>%
+  mutate(
+    subject = glue("<b>Member {subject}: </b>"), # bold the subject thing
+    name = glue("<b>{name}: </b>"),
+    chatentry = str_replace_all(chatentry, "\\\\q.*?\\\\q", # fix quote glitch
+                                function(m) paste0("<q>", gsub("\\\\q", "", m), "</q>")),
+    chatentry = str_c(chatentry, "<br>")
+  ) %>%
+  arrange(unique_group, secondsintochat)
+
+
+### create name df
+convo_clean %>% 
+  group_by(unique_group) %>% 
+  distinct(genderknown, female, subject, name) %>% 
+  select(subject, name, everything()) %>% 
+  summarise(subject = list(subject),
+            name = list(name),
+            genderknown = list(genderknown),
+            female = list(female)) %>% 
+  toJSON(.) %>% 
+  write("convo/pseudonyms-subject-match.json")
 
 
 ### export anon convos as json  
-convo_clean %>% 
+convo_prep %>% 
   group_by(unique_group, topic) %>% 
   mutate(chatentry = str_c(subject, chatentry)) %>% 
   summarise(chat = paste0(chatentry, collapse = "")) %>% 
@@ -75,7 +95,7 @@ convo_clean %>%
 
 
 ### export gender convos as json  
-convo_clean %>% 
+convo_prep %>% 
   group_by(unique_group, topic) %>% 
   mutate(chatentry = str_c(name, chatentry)) %>% 
   summarise(chat = paste0(chatentry, collapse = "")) %>% 

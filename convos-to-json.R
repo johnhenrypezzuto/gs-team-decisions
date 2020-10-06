@@ -36,6 +36,7 @@ names_df <- bind_rows(
 convo <- read_dta("/Users/jhap/Dropbox (Harvard University)/katie/Consideration of Ideas/Data/Chat Data.dta")
 
 ## if I use membernum here it will always be 1, 2, 3
+
 gender <- read_dta("/Users/jhap/Dropbox (Harvard University)/katie/Consideration of Ideas/Data/main_data_reshaped_kyra.dta") %>% 
   distinct(unique_group, subject, female) %>% 
   mutate(n = as.integer(runif(nrow(.), min = 1, max = n_names))) %>% 
@@ -74,7 +75,7 @@ convo_prep <-
 
 ### create name df
 convo_clean %>% 
-  group_by(unique_group) %>% 
+  group_by(unique_group, topic) %>% 
   distinct(genderknown, female, subject, name) %>% 
   select(subject, name, everything()) %>% 
   summarise(subject = list(subject),

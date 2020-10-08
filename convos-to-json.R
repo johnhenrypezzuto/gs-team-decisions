@@ -76,6 +76,7 @@ convo_prep <-
 ### create name df
 convo_clean %>% 
   group_by(unique_group, topic) %>% 
+  mutate(subject = str_c("Member ", subject)) %>% 
   distinct(genderknown, female, subject, name) %>% 
   select(subject, name, everything()) %>% 
   summarise(subject = list(subject),

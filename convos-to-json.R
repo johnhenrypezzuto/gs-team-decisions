@@ -59,7 +59,7 @@ convo_clean <-
     left_join(gender) %>% # import names
     mutate(subject = dense_rank(subject)) %>%  # renumber Member 1:3
     left_join(topic_df) %>% # import topics
-  arrange(unique_group, secondsintochat)
+  arrange(topic, unique_group, secondsintochat)
   
 
 convo_prep <-
@@ -73,9 +73,10 @@ convo_prep <-
   )
 
 
+
 ### create name df
 convo_clean %>% 
-  group_by(unique_group, topic) %>% 
+  group_by(topic, unique_group) %>% 
   mutate(subject = str_c("Member ", subject)) %>% 
   distinct(genderknown, female, subject, name) %>% 
   select(subject, name, everything()) %>% 
@@ -89,7 +90,7 @@ convo_clean %>%
 
 ### export anon convos as json  
 convo_prep %>% 
-  group_by(unique_group, topic) %>% 
+  group_by(topic, unique_group) %>% 
   mutate(chatentry = str_c(subject, chatentry)) %>% 
   summarise(chat = paste0(chatentry, collapse = "")) %>% 
   toJSON(.) %>% 
@@ -98,8 +99,18 @@ convo_prep %>%
 
 ### export gender convos as json  
 convo_prep %>% 
-  group_by(unique_group, topic) %>% 
+  group_by(topic, unique_group) %>% 
   mutate(chatentry = str_c(name, chatentry)) %>% 
   summarise(chat = paste0(chatentry, collapse = "")) %>% 
   toJSON(.) %>% 
   write("convo/chat-gender.json")
+
+
+
+### get convo IDs for selecting groups
+convo_clean %>% 
+  ungroup() %>% 
+  distinct(unique_group, topic) %>% 
+  mutate(n = row_number() - 1) %>% 
+  group_by(topic) %>% 
+  filter(n == min(n) | n == max(n))

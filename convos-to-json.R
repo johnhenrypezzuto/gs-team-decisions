@@ -58,7 +58,8 @@ convo_clean <-
     group_by(unique_group) %>% 
     left_join(gender) %>% # import names
     mutate(subject = dense_rank(subject)) %>%  # renumber Member 1:3
-    left_join(topic_df) # import topics
+    left_join(topic_df) %>% # import topics
+  arrange(unique_group, secondsintochat)
   
 
 convo_prep <-
@@ -69,8 +70,7 @@ convo_prep <-
     chatentry = str_replace_all(chatentry, "\\\\q.*?\\\\q", # fix quote glitch
                                 function(m) paste0("<q>", gsub("\\\\q", "", m), "</q>")),
     chatentry = str_c(chatentry, "<br>")
-  ) %>%
-  arrange(unique_group, secondsintochat)
+  )
 
 
 ### create name df

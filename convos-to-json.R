@@ -3,15 +3,18 @@ library(tidyverse)
 library(jsonlite)
 library(haven)
 library(glue)
-library(babynames)
 
 set.seed(42)
 
 n_names = 500
 
 # master name assignment db based on membernum and gender 
-names_df <- tibble(pos = rep(seq(1,3), 3), 
-                   convo = c(rep("convo1", 3), rep("convo2", 3), rep("convo3", 3)),
+names_df <- tibble(pos = rep(seq(1,3), 5), 
+                   convo = c(rep("convo1", 3), 
+                             rep("convo2", 3), 
+                             rep("convo3", 3), 
+                             rep("convo4", 3), 
+                             rep("convo5", 3)), # change here to change show up position
                    male_name= c("Michael",
                                 "Christopher",
                                 "Matthew",
@@ -20,7 +23,13 @@ names_df <- tibble(pos = rep(seq(1,3), 3),
                                 "Nicholas",
                                 "Andrew",
                                 "Daniel",
-                                "Tyler"), 
+                                "Tyler",
+                                "Joseph",
+                                "Brandon",
+                                "David",
+                                "James",
+                                "Ryan",
+                                "John"), 
                    female_name = c("Jessica",
                                    "Ashley",
                                    "Emily",
@@ -29,7 +38,13 @@ names_df <- tibble(pos = rep(seq(1,3), 3),
                                    "Amanda",
                                    "Brittany",
                                    "Elizabeth",
-                                   "Megan")
+                                   "Megan",
+                                   "Hannah",
+                                   "Kayla",
+                                   "Lauren",
+                                   "Stephanie",
+                                   "Rachel",
+                                   "Jennifer")
                    ) %>% 
   pivot_longer(cols = male_name:female_name, names_to = "gender") %>% 
   pivot_wider(id_cols = c(pos, gender), names_from = convo, values_from = value) %>% 
@@ -69,6 +84,7 @@ convo_clean <-
     left_join(topic_df) %>% # import topics
   arrange(topic, unique_group, secondsintochat)
   
+# View(convo_clean)
 
 convo_prep <-
   convo_clean %>%
@@ -82,7 +98,7 @@ convo_prep <-
 
 
 ### create name df for convo mapping
-names_df
+
 convo_clean %>% 
   group_by(topic, unique_group) %>% 
   mutate(subject = str_c("Member ", subject)) %>% 
@@ -93,10 +109,14 @@ convo_clean %>%
             name1 = list(convo1),
             name2 = list(convo2),
             name3 = list(convo3),
+            name4 = list(convo4),
+            name5 = list(convo5),
             name_rev1 = list(convo1_rev),
             name_rev2 = list(convo2_rev),
             name_rev3 = list(convo3_rev),
-            female = list(female)) %>% 
+            name_rev4 = list(convo4_rev),
+            name_rev5 = list(convo5_rev),
+            female = list(female)) %>% ## 276 groups
   toJSON(.) %>% 
   write("convo/pseudonyms-subject-match.json")
 
@@ -105,38 +125,50 @@ convo_clean %>%
 convo_prep %>% 
   group_by(topic, unique_group) %>% 
   mutate(chatentry = str_c(subject, chatentry)) %>% 
-  summarise(chat = paste0(chatentry, collapse = "")) %>% 
+  summarise(chat = paste0(chatentry, collapse = "")) %>% ## 276
   toJSON(.) %>% 
   write("convo/chat-anon.json")
 
 
 ### export gender convos as json, one group per row
 convo_prep %>% 
-  left_join(select(gender, "unique_group", "membernum", convo1:convo3), 
+  left_join(select(gender, "unique_group", "membernum", convo1:convo5), 
             by = c("unique_group", "membernum")) %>% # import names
   group_by(topic, unique_group) %>% 
   mutate_at(vars(convo1:convo3), ~str_c("<b>", ., ": </b>")) %>% # format names
   mutate(chatentry1 = str_c(convo1, chatentry), # add names to convos
          chatentry2 = str_c(convo2, chatentry),
-         chatentry3 = str_c(convo3, chatentry)) %>% 
+         chatentry3 = str_c(convo3, chatentry),
+         chatentry4 = str_c(convo4, chatentry),
+         chatentry5 = str_c(convo5, chatentry)
+         ) %>% 
   summarise(chat1 = paste0(chatentry1, collapse = ""), # collapse convos
             chat2 = paste0(chatentry2, collapse = ""),
-            chat3 = paste0(chatentry3, collapse = "")) %>% 
+            chat3 = paste0(chatentry3, collapse = ""),
+            chat4 = paste0(chatentry4, collapse = ""),
+            chat5 = paste0(chatentry5, collapse = "")
+            ) %>% ## 276
   toJSON(.) %>% 
   write("convo/chat-gender.json")
 
 ### export reversed gender convos as json  
 convo_prep %>% 
-  left_join(select(gender, "unique_group", "membernum", convo1_rev:convo3_rev), # we import the reversed names
+  left_join(select(gender, "unique_group", "membernum", convo1_rev:convo5_rev), # we import the reversed names
             by = c("unique_group", "membernum")) %>% # import names
   group_by(topic, unique_group) %>% 
   mutate_at(vars(convo1_rev:convo3_rev), ~str_c("<b>", ., ": </b>")) %>% 
   mutate(chatentry1 = str_c(convo1_rev, chatentry), 
          chatentry2 = str_c(convo2_rev, chatentry),
-         chatentry3 = str_c(convo3_rev, chatentry)) %>% 
+         chatentry3 = str_c(convo3_rev, chatentry),
+         chatentry4 = str_c(convo4_rev, chatentry),
+         chatentry5 = str_c(convo5_rev, chatentry)
+         ) %>% 
   summarise(chat1 = paste0(chatentry1, collapse = ""),
             chat2 = paste0(chatentry2, collapse = ""),
-            chat3 = paste0(chatentry3, collapse = "")) %>% 
+            chat3 = paste0(chatentry3, collapse = ""),
+            chat4 = paste0(chatentry4, collapse = ""),
+            chat5 = paste0(chatentry5, collapse = "")
+            ) %>% ## 276
   toJSON(.) %>% 
   write("convo/chat-gender-rev.json")
 

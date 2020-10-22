@@ -98,7 +98,6 @@ convo_prep <-
 
 
 ### create name df for convo mapping
-
 convo_clean %>% 
   group_by(topic, unique_group) %>% 
   mutate(subject = str_c("Member ", subject)) %>% 
@@ -135,7 +134,7 @@ convo_prep %>%
   left_join(select(gender, "unique_group", "membernum", convo1:convo5), 
             by = c("unique_group", "membernum")) %>% # import names
   group_by(topic, unique_group) %>% 
-  mutate_at(vars(convo1:convo3), ~str_c("<b>", ., ": </b>")) %>% # format names
+  mutate_at(vars(convo1:convo5), ~str_c("<b>", ., ": </b>")) %>% # format names
   mutate(chatentry1 = str_c(convo1, chatentry), # add names to convos
          chatentry2 = str_c(convo2, chatentry),
          chatentry3 = str_c(convo3, chatentry),
@@ -156,7 +155,7 @@ convo_prep %>%
   left_join(select(gender, "unique_group", "membernum", convo1_rev:convo5_rev), # we import the reversed names
             by = c("unique_group", "membernum")) %>% # import names
   group_by(topic, unique_group) %>% 
-  mutate_at(vars(convo1_rev:convo3_rev), ~str_c("<b>", ., ": </b>")) %>% 
+  mutate_at(vars(convo1_rev:convo5_rev), ~str_c("<b>", ., ": </b>")) %>% 
   mutate(chatentry1 = str_c(convo1_rev, chatentry), 
          chatentry2 = str_c(convo2_rev, chatentry),
          chatentry3 = str_c(convo3_rev, chatentry),

@@ -10,11 +10,11 @@ n_names = 500
 
 # master name assignment db based on membernum and gender 
 names_df <- tibble(pos = rep(seq(1,3), 5), 
-                   convo = c(rep("convo1", 3), 
+                   convo = c(rep("convo1", 3), # change here to change show up position
                              rep("convo2", 3), 
                              rep("convo3", 3), 
                              rep("convo4", 3), 
-                             rep("convo5", 3)), # change here to change show up position
+                             rep("convo5", 3)), 
                    male_name= c("Michael",
                                 "Christopher",
                                 "Matthew",
@@ -69,7 +69,16 @@ gender <- read_dta("/Users/jhap/Dropbox (Harvard University)/katie/Consideration
 
 
 topic_df <- tibble(question = c(3, 8, 5, 2, 4, 1, 7, 6), 
-                   topic = c("Onions", "Laundry", "Fire", "Hot or Cold", "Shoes", "Bar", "Manly", "Name"))
+                   topic = c("Onions", "Laundry", "Fire", "Hot or Cold", "Shoes", "Bar", "Manly", "Name"),
+                   question_text = c("Family Feud Question: Name a reason your eyes might water/have tears.",
+                                     "Family Feud Question: Name an item of clothing that you should not wash in the washing machine.",
+                                     "Family Feud Question: Name something a firefighter doesn't want to be without.",
+                                     "Family Feud Question: Name a drink or good that can be consumed either hot or cold.",
+                                     "Family Feud Question: Name a sport in which the competitors wear funny-looking shoes.",
+                                     "Family Feud Question: Give me a word or phase that contains the word bar.",
+                                     "Family Feud Question: Name something men think is manly.",
+                                     "Family Feud Question: Name a city or state that has a name a woman might have.")) %>% 
+  mutate(question_text = str_remove(question_text, "Family Feud Question: "))
 
 
 
@@ -82,7 +91,7 @@ convo_clean <-
     group_by(unique_group) %>% 
     mutate(subject = dense_rank(subject)) %>%  # renumber Member 1:3
     left_join(topic_df) %>% # import topics
-  arrange(topic, unique_group, secondsintochat)
+  arrange(question_text, unique_group, secondsintochat)
   
 # View(convo_clean)
 
@@ -99,7 +108,7 @@ convo_prep <-
 
 ### create name df for convo mapping
 convo_clean %>% 
-  group_by(topic, unique_group) %>% 
+  group_by(question_text, unique_group) %>% 
   mutate(subject = str_c("Member ", subject)) %>% 
   distinct(unique_group, female, subject, membernum) %>% 
   left_join(select(gender, unique_group, membernum, starts_with("convo"))) %>% 
@@ -122,7 +131,7 @@ convo_clean %>%
 
 ### export anon convos as json, one group per row
 convo_prep %>% 
-  group_by(topic, unique_group) %>% 
+  group_by(question_text, unique_group) %>% 
   mutate(chatentry = str_c(subject, chatentry)) %>% 
   summarise(chat = paste0(chatentry, collapse = "")) %>% ## 276
   toJSON(.) %>% 
@@ -154,7 +163,7 @@ convo_prep %>%
 convo_prep %>% 
   left_join(select(gender, "unique_group", "membernum", convo1_rev:convo5_rev), # we import the reversed names
             by = c("unique_group", "membernum")) %>% # import names
-  group_by(topic, unique_group) %>% 
+  group_by(question_text, unique_group) %>% 
   mutate_at(vars(convo1_rev:convo5_rev), ~str_c("<b>", ., ": </b>")) %>% 
   mutate(chatentry1 = str_c(convo1_rev, chatentry), 
          chatentry2 = str_c(convo2_rev, chatentry),
@@ -176,7 +185,7 @@ convo_prep %>%
 ### get convo IDs for selecting groups
 convo_clean %>% 
   ungroup() %>% 
-  distinct(unique_group, topic) %>% 
+  distinct(unique_group, question_text) %>% 
   mutate(n = row_number() - 1) %>% 
-  group_by(topic) %>% 
+  group_by(question_text) %>% 
   filter(n == min(n) | n == max(n))

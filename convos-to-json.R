@@ -77,8 +77,8 @@ topic_df <- tibble(question = c(3, 8, 5, 2, 4, 1, 7, 6),
                                      "Family Feud Question: Name a sport in which the competitors wear funny-looking shoes.",
                                      "Family Feud Question: Give me a word or phase that contains the word bar.",
                                      "Family Feud Question: Name something men think is manly.",
-                                     "Family Feud Question: Name a city or state that has a name a woman might have.")) %>% 
-  mutate(question_text = str_remove(question_text, "Family Feud Question: "))
+                                     "Family Feud Question: Name a city or state that has a name a woman might have.")) 
+#%>% mutate(question_text = str_remove(question_text, "Family Feud Question: "))
 
 
 

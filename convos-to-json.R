@@ -110,7 +110,7 @@ convo_prep <-
 
 ### create name df for convo mapping
 convo_clean %>%
-  group_by(question_text, unique_group) %>% 
+  group_by(topic, question_text, unique_group) %>% 
   mutate(subject = str_c("Member ", subject)) %>% 
   distinct(unique_group, female, subject, membernum) %>% 
   left_join(select(gender, unique_group, membernum, starts_with("convo"))) %>% 
@@ -127,6 +127,7 @@ convo_clean %>%
             name_rev4 = list(convo4_rev),
             name_rev5 = list(convo5_rev),
             female = list(female)) %>% ## 276 groups
+  arrange(topic, unique_group) %>% 
   toJSON(.) %>% 
   write("convo/pseudonyms-subject-match.json")
 

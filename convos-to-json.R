@@ -90,10 +90,10 @@ convo_clean <-
     drop_na(chatentry, subject) %>% 
     group_by(unique_group) %>% 
     mutate(subject = dense_rank(subject)) %>%  # renumber Member 1:3
-    left_join(topic_df) %>% # import topics
-  arrange(question_text, unique_group, secondsintochat)
-  
-# View(convo_clean)
+    tidylog::left_join(topic_df) %>% # import topics
+  arrange(topic, unique_group, secondsintochat)
+
+
 
 convo_prep <-
   convo_clean %>%
@@ -104,15 +104,17 @@ convo_prep <-
     chatentry = str_c(chatentry, "<br>")
   )
 
+# View(convo_clean)
+# View(convo_prep)
 
 
 ### create name df for convo mapping
-convo_clean %>% 
+convo_clean %>%
   group_by(question_text, unique_group) %>% 
   mutate(subject = str_c("Member ", subject)) %>% 
   distinct(unique_group, female, subject, membernum) %>% 
   left_join(select(gender, unique_group, membernum, starts_with("convo"))) %>% 
-  select(subject, starts_with("convo"), everything()) %>% 
+  select(subject, starts_with("convo"), everything()) %>%
   summarise(subject = list(subject),
             name1 = list(convo1),
             name2 = list(convo2),
@@ -128,14 +130,6 @@ convo_clean %>%
   toJSON(.) %>% 
   write("convo/pseudonyms-subject-match.json")
 
-
-### export anon convos as json, one group per row
-convo_prep %>% 
-  group_by(question_text, unique_group) %>% 
-  mutate(chatentry = str_c(subject, chatentry)) %>% 
-  summarise(chat = paste0(chatentry, collapse = "")) %>% ## 276
-  toJSON(.) %>% 
-  write("convo/chat-anon.json")
 
 
 ### export gender convos as json, one group per row
@@ -156,14 +150,24 @@ convo_prep %>%
             chat4 = paste0(chatentry4, collapse = ""),
             chat5 = paste0(chatentry5, collapse = "")
             ) %>% ## 276
+  arrange(topic, unique_group) %>% 
   toJSON(.) %>% 
   write("convo/chat-gender.json")
+
+### export anon convos as json, one group per row
+convo_prep %>% 
+  group_by(topic, question_text, unique_group) %>% 
+  mutate(chatentry = str_c(subject, chatentry)) %>% 
+  summarise(chat = paste0(chatentry, collapse = "")) %>% ## 276
+  arrange(topic, unique_group) %>% 
+  toJSON(.) %>% 
+  write("convo/chat-anon.json")
 
 ### export reversed gender convos as json  
 convo_prep %>% 
   left_join(select(gender, "unique_group", "membernum", convo1_rev:convo5_rev), # we import the reversed names
             by = c("unique_group", "membernum")) %>% # import names
-  group_by(question_text, unique_group) %>% 
+  group_by(topic, question_text, unique_group) %>% 
   mutate_at(vars(convo1_rev:convo5_rev), ~str_c("<b>", ., ": </b>")) %>% 
   mutate(chatentry1 = str_c(convo1_rev, chatentry), 
          chatentry2 = str_c(convo2_rev, chatentry),
@@ -177,6 +181,7 @@ convo_prep %>%
             chat4 = paste0(chatentry4, collapse = ""),
             chat5 = paste0(chatentry5, collapse = "")
             ) %>% ## 276
+  arrange(topic, unique_group) %>% 
   toJSON(.) %>% 
   write("convo/chat-gender-rev.json")
 
